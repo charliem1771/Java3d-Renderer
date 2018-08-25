@@ -25,7 +25,8 @@ public class Renderer {
 				g2.setColor(Color.BLACK);
 				g2.fillRect(0,0,getWidth(),getHeight());
 				//rendering magic will happen here
-				List<Triangle> tris = new ArrayList<>();
+				List<Triangle> tris = new ArrayList<>();//creating a list of each triangle face
+				//creating new triangles and adding them to the list along with individually colouring each one
 				tris.add(new Triangle(new Vertex(100, 100, 100),
 	                      new Vertex(-100, -100, 100),
 	                      new Vertex(-100, 100, -100),
@@ -44,7 +45,18 @@ public class Renderer {
 	                      Color.BLUE));
 				g2.translate(getWidth()/2,getHeight()/2);
 				g2.setColor(Color.WHITE);
-				for(Triangle t : tris) {
+				//the rotation matrix
+				double heading = Math.toRadians(headingSlider.getValue());
+				Matrix3 transform = new Matrix3(new double[] {
+					Math.cos(heading),0,-Math.sin(heading),0,1,0,Math.sin(heading),0,Math.cos(heading)
+				});
+				
+				//drawing the triangle faces
+				for(Triangle t : tris) 
+				{
+					Vertex v1 = transform.transform(t.v1);
+					Vertex v2 = transform.transform(t.v2);
+					Vertex v3 = transform.transform(t.v3);
 					Path2D path = new Path2D.Double();
 					path.moveTo(t.v1.x, t.v2.y);
 					path.lineTo(t.v2.x, t.v2.y);
@@ -55,6 +67,9 @@ public class Renderer {
 			}
 		};
 		pane.add(renderPanel,BorderLayout.CENTER);
+		//the below low code adds listeners to force a redraw of the render based on the sliders
+		headingSlider.addChangeListener(e -> renderPanel.repaint());
+		pitchSlider.addChangeListener(e -> renderPanel.repaint());
 		frame.setSize(400,400);
 		frame.setVisible(true);
 	}
@@ -62,6 +77,7 @@ public class Renderer {
 }
 
 class Vertex {
+	//creates a vertex with 3 points making it usable in 3d space
 	double x;
 	double y;
 	double z;
@@ -74,6 +90,7 @@ class Vertex {
 }
 
 class Triangle {
+	//allows for a triangle to be created based off of 3 vertex points
     Vertex v1;
     Vertex v2;
     Vertex v3;
@@ -88,6 +105,7 @@ class Triangle {
 
 class Matrix3
 {
+	//constructing the values for the matrix
 	double[] values;
 	Matrix3(double[] values)
 	{
@@ -96,6 +114,7 @@ class Matrix3
 	
 	Matrix3 multiply(Matrix3 other) 
 	{
+		//using for loops to iterate through a 3X3X3 matrix used for multiplication.
 		double[] result = new double[9];
 		for(int row = 0; row < 3; row++) 
 		{
@@ -106,10 +125,12 @@ class Matrix3
 					result[row *3 + col] += this.values[row * 3+i] * other.values[i*3+col];
 				}
 			}
-			return new Matrix3(result);
 		}
+		return new Matrix3(result);
+	}
 		Vertex transform(Vertex in) 
 		{
+			//creating a new 3d matrix based off positions in the array and multiplying them
 			return new Vertex(
 					in.x *values[0]+in.y*values[3]+in.z*values[6],
 					in.x *values[1]+in.y*values[4]+in.z*values[7],
